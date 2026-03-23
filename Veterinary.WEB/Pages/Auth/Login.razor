@@ -4,34 +4,50 @@
 @inject NavigationManager NavigationManager
 @inject ILoginService LoginService
 
-<h3>Iniciar Sesion</h3>
-
 <EditForm Model="loginDto" OnValidSubmit="LoginAsync">
     <DataAnnotationsValidator />
 
-    <div class="row">
-        <div class="col-4">
+    <div class="auth-shell">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h3>Iniciar sesion</h3>
+                <p>Ingresa con tu correo confirmado para acceder al sistema.</p>
+            </div>
+
             <div class="mb-3">
-                <label>Email:</label>
+                <label class="form-label">Email</label>
                 <InputText class="form-control" @bind-Value="loginDto.Email" />
                 <ValidationMessage For="@(() => loginDto.Email)" />
             </div>
-            <div class="mb-3">
-                <label>Contrasena:</label>
+            <div class="mb-4">
+                <label class="form-label">Contrasena</label>
                 <InputText type="password" class="form-control" @bind-Value="loginDto.Password" />
                 <ValidationMessage For="@(() => loginDto.Password)" />
             </div>
-            <button class="btn btn-primary" type="submit">Iniciar Sesion</button>
+
+            <div class="auth-actions">
+                <button class="btn btn-primary" type="submit" disabled="@loading">Entrar</button>
+                <a class="btn btn-outline-secondary" href="/register">Crear cuenta</a>
+            </div>
+
+            <div class="auth-links">
+                <a href="/resendconfirmation">Reenviar confirmacion</a>
+                <a href="/forgotpassword">Olvide mi contrasena</a>
+            </div>
         </div>
     </div>
 </EditForm>
 
 @code {
     private readonly LoginDTO loginDto = new();
+    private bool loading;
 
     private async Task LoginAsync()
     {
+        loading = true;
         var responseHttp = await Repository.PostAsync<LoginDTO, TokenDTO>("/api/accounts/Login", loginDto);
+        loading = false;
+
         if (responseHttp.Error)
         {
             var message = await responseHttp.GetErrorMessageAsync();

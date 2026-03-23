@@ -46,9 +46,19 @@ public class UserHelper(
         return await _context.Users.FirstOrDefaultAsync(x => x.Id == userId.ToString());
     }
 
+    public async Task<User?> GetUserByIdAsync(string userId)
+    {
+        return await _userManager.FindByIdAsync(userId);
+    }
+
     public async Task<bool> IsUserInRoleAsync(User user, string roleName)
     {
         return await _userManager.IsInRoleAsync(user, roleName);
+    }
+
+    public async Task<bool> IsEmailConfirmedAsync(User user)
+    {
+        return await _userManager.IsEmailConfirmedAsync(user);
     }
 
     public async Task<SignInResult> LoginAsync(LoginDTO model)
@@ -69,5 +79,25 @@ public class UserHelper(
     public async Task<IdentityResult> UpdateUserAsync(User user)
     {
         return await _userManager.UpdateAsync(user);
+    }
+
+    public async Task<string> GenerateEmailConfirmationTokenAsync(User user)
+    {
+        return await _userManager.GenerateEmailConfirmationTokenAsync(user);
+    }
+
+    public async Task<IdentityResult> ConfirmEmailAsync(User user, string token)
+    {
+        return await _userManager.ConfirmEmailAsync(user, token);
+    }
+
+    public async Task<string> GeneratePasswordResetTokenAsync(User user)
+    {
+        return await _userManager.GeneratePasswordResetTokenAsync(user);
+    }
+
+    public async Task<IdentityResult> ResetPasswordAsync(User user, string token, string newPassword)
+    {
+        return await _userManager.ResetPasswordAsync(user, token, newPassword);
     }
 }

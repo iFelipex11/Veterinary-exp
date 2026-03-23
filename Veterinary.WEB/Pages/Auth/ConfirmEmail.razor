@@ -1,0 +1,45 @@
+@page "/confirmemail"
+@attribute [AllowAnonymous]
+@inject IRepository Repository
+
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h3>Confirmacion de correo</h3>
+            <p>@message</p>
+        </div>
+
+        <div class="auth-actions">
+            <a class="btn btn-primary" href="/login">Ir al login</a>
+            <a class="btn btn-outline-secondary" href="/resendconfirmation">Reenviar confirmacion</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? UserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Token { get; set; }
+
+    private string message = "Validando tu enlace...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(UserId) || string.IsNullOrWhiteSpace(Token))
+        {
+            message = "El enlace de confirmacion no es valido.";
+            return;
+        }
+
+        var responseHttp = await Repository.GetAsync<string>($"/api/accounts/ConfirmEmail?userId={Uri.EscapeDataString(UserId)}&token={Uri.EscapeDataString(Token)}");
+        if (responseHttp.Error)
+        {
+            message = await responseHttp.GetErrorMessageAsync() ?? "No fue posible confirmar el correo.";
+            return;
+        }
+
+        message = responseHttp.Response!;
+    }
+}

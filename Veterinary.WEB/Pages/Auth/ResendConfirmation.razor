@@ -1,0 +1,51 @@
+@page "/resendconfirmation"
+@attribute [AllowAnonymous]
+@inject IRepository Repository
+@inject SweetAlertService SweetAlertService
+@inject NavigationManager NavigationManager
+
+<EditForm Model="emailDto" OnValidSubmit="SendAsync">
+    <DataAnnotationsValidator />
+
+    <div class="auth-shell">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h3>Reenviar confirmacion</h3>
+                <p>Si ya te registraste, podemos enviarte nuevamente el correo de activacion.</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Email</label>
+                <InputText class="form-control" @bind-Value="emailDto.Email" />
+                <ValidationMessage For="@(() => emailDto.Email)" />
+            </div>
+
+            <div class="auth-actions">
+                <button class="btn btn-primary" type="submit" disabled="@loading">Enviar</button>
+                <a class="btn btn-outline-secondary" href="/login">Volver</a>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private readonly EmailDTO emailDto = new();
+    private bool loading;
+
+    private async Task SendAsync()
+    {
+        loading = true;
+        var responseHttp = await Repository.PostAsync<EmailDTO, string>("/api/accounts/ResendConfirmation", emailDto);
+        loading = false;
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await SweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        await SweetAlertService.FireAsync("Exito", responseHttp.Response!, SweetAlertIcon.Success);
+        NavigationManager.NavigateTo("/login");
+    }
+}
