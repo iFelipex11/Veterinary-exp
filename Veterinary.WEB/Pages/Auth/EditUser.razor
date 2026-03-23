@@ -1,0 +1,100 @@
+@page "/edituser"
+@inject IRepository Repository
+@inject SweetAlertService SweetAlertService
+@inject NavigationManager NavigationManager
+
+@if (user is null)
+{
+    <div class="spinner"></div>
+}
+else
+{
+    <EditForm Model="user" OnValidSubmit="SaveUserAsync">
+        <DataAnnotationsValidator />
+
+        <div class="card">
+            <div class="card-header">
+                <span>
+                    <i class="oi oi-person"></i> Editar Usuario
+                    <a class="btn btn-sm btn-secondary float-end" href="/changepassword"><i class="oi oi-key"></i> Cambiar Contrasena</a>
+                    <button class="btn btn-sm btn-primary float-end mx-2" type="submit"><i class="oi oi-check"></i> Guardar Cambios</button>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <label>Nombres:</label>
+                            <InputText class="form-control" @bind-Value="user.FirstName" />
+                            <ValidationMessage For="@(() => user.FirstName)" />
+                        </div>
+                        <div class="mb-3">
+                            <label>Apellidos:</label>
+                            <InputText class="form-control" @bind-Value="user.LastName" />
+                            <ValidationMessage For="@(() => user.LastName)" />
+                        </div>
+                        <div class="mb-3">
+                            <label>Documento:</label>
+                            <InputText class="form-control" @bind-Value="user.Document" />
+                            <ValidationMessage For="@(() => user.Document)" />
+                        </div>
+                        <div class="mb-3">
+                            <label>Direccion:</label>
+                            <InputText class="form-control" @bind-Value="user.Address" />
+                            <ValidationMessage For="@(() => user.Address)" />
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <label>Telefono:</label>
+                            <InputText class="form-control" @bind-Value="user.PhoneNumber" />
+                            <ValidationMessage For="@(() => user.PhoneNumber)" />
+                        </div>
+                        <div class="mb-3">
+                            <label>Foto (URL o base64):</label>
+                            <InputText class="form-control" @bind-Value="user.Photo" />
+                            <ValidationMessage For="@(() => user.Photo)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private User? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserAsync();
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var responseHttp = await Repository.GetAsync<User>("/api/accounts");
+        if (responseHttp.Error)
+        {
+            var messageError = await responseHttp.GetErrorMessageAsync();
+            await SweetAlertService.FireAsync("Error", messageError, SweetAlertIcon.Error);
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        user = responseHttp.Response;
+    }
+
+    private async Task SaveUserAsync()
+    {
+        var responseHttp = await Repository.PutAsync("/api/accounts", user);
+        if (responseHttp.Error)
+        {
+            var messageError = await responseHttp.GetErrorMessageAsync();
+            await SweetAlertService.FireAsync("Error", messageError, SweetAlertIcon.Error);
+            return;
+        }
+
+        await SweetAlertService.FireAsync("Exito", "Usuario actualizado correctamente.", SweetAlertIcon.Success);
+        NavigationManager.NavigateTo("/");
+    }
+}

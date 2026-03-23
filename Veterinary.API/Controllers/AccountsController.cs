@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -64,6 +65,70 @@ public class AccountsController(IUserHelper userHelper, IConfiguration configura
         return Ok(BuildToken(user));
     }
 
+    [HttpGet]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<ActionResult> Get()
+    {
+        var user = await _userHelper.GetUserAsync(User.Identity!.Name!);
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(user);
+    }
+
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<ActionResult> Put([FromBody] User user)
+    {
+        var currentUser = await _userHelper.GetUserAsync(User.Identity!.Name!);
+        if (currentUser is null)
+        {
+            return NotFound();
+        }
+
+        currentUser.Document = user.Document;
+        currentUser.FirstName = user.FirstName;
+        currentUser.LastName = user.LastName;
+        currentUser.Address = user.Address;
+        currentUser.PhoneNumber = user.PhoneNumber;
+        currentUser.Photo = user.Photo;
+        currentUser.CityId = user.CityId;
+
+        var result = await _userHelper.UpdateUserAsync(currentUser);
+        if (result.Succeeded)
+        {
+            return NoContent();
+        }
+
+        return BadRequest(result.Errors.FirstOrDefault()?.Description);
+    }
+
+    [HttpPost("changePassword")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<ActionResult> ChangePasswordAsync([FromBody] ChangePasswordDTO model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var user = await _userHelper.GetUserAsync(User.Identity!.Name!);
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        var result = await _userHelper.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Errors.FirstOrDefault()?.Description);
+        }
+
+        return NoContent();
+    }
+
     private TokenDTO BuildToken(User user)
     {
         var claims = new List<Claim>
@@ -74,8 +139,7 @@ public class AccountsController(IUserHelper userHelper, IConfiguration configura
             new("FirstName", user.FirstName),
             new("LastName", user.LastName),
             new("Address", user.Address),
-            new("Photo", user.Photo ?? string.Empty)
-            ,
+            new("Photo", user.Photo ?? string.Empty),
             new("CityId", user.CityId.ToString())
         };
 

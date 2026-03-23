@@ -1,6 +1,6 @@
 <AuthorizeView>
     <Authorized>
-        <span class="me-3">Hola, @context.User.Identity!.Name</span>
+        <a href="edituser" class="nav-link btn btn-link d-inline">@context.User.Identity!.Name</a>
         <a href="logout" class="nav-link btn btn-link d-inline">Cerrar Sesion</a>
     </Authorized>
     <NotAuthorized>

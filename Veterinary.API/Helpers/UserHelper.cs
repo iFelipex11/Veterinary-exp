@@ -41,6 +41,11 @@ public class UserHelper(
         return await _context.Users.FirstOrDefaultAsync(x => x.Email! == email);
     }
 
+    public async Task<User?> GetUserAsync(Guid userId)
+    {
+        return await _context.Users.FirstOrDefaultAsync(x => x.Id == userId.ToString());
+    }
+
     public async Task<bool> IsUserInRoleAsync(User user, string roleName)
     {
         return await _userManager.IsInRoleAsync(user, roleName);
@@ -54,5 +59,15 @@ public class UserHelper(
     public async Task LogoutAsync()
     {
         await _signInManager.SignOutAsync();
+    }
+
+    public async Task<IdentityResult> ChangePasswordAsync(User user, string currentPassword, string newPassword)
+    {
+        return await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+    }
+
+    public async Task<IdentityResult> UpdateUserAsync(User user)
+    {
+        return await _userManager.UpdateAsync(user);
     }
 }
