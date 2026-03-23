@@ -14,10 +14,11 @@ namespace Veterinary.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AccountsController(IUserHelper userHelper, IMailHelper mailHelper, IConfiguration configuration) : ControllerBase
+public class AccountsController(IUserHelper userHelper, IMailHelper mailHelper, IFileStorage fileStorage, IConfiguration configuration) : ControllerBase
 {
     private readonly IUserHelper _userHelper = userHelper;
     private readonly IMailHelper _mailHelper = mailHelper;
+    private readonly IFileStorage _fileStorage = fileStorage;
     private readonly IConfiguration _configuration = configuration;
 
     [AllowAnonymous]
@@ -170,6 +171,26 @@ public class AccountsController(IUserHelper userHelper, IMailHelper mailHelper, 
         }
 
         return Ok("Tu contrasena fue restablecida correctamente.");
+    }
+
+    [AllowAnonymous]
+    [HttpPost("UploadPhoto")]
+    public async Task<ActionResult> UploadPhoto(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest("Debes seleccionar una imagen.");
+        }
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("El archivo seleccionado no es una imagen valida.");
+        }
+
+        await using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream);
+        var url = await _fileStorage.SaveFileAsync(memoryStream.ToArray(), Path.GetExtension(file.FileName), "users");
+        return Ok(url);
     }
 
     [HttpGet]

@@ -56,6 +56,8 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
     .AddDefaultTokenProviders();
 builder.Services.AddScoped<IUserHelper, UserHelper>();
 builder.Services.AddScoped<IMailHelper, MailHelper>();
+builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -87,6 +89,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseCors(policy => policy

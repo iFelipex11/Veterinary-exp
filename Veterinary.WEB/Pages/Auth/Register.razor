@@ -101,7 +101,7 @@
                             }
 
                             <InputFile class="form-control" OnChange="LoadPhotoAsync" accept="image/*" />
-                            <small class="text-muted">Selecciona una imagen JPG, PNG o WEBP. Se guardara en base64.</small>
+                            <small class="text-muted">Selecciona una imagen JPG, PNG o WEBP. Se guardara en el servidor.</small>
 
                             @if (!string.IsNullOrWhiteSpace(userDto.Photo))
                             {
@@ -252,10 +252,21 @@
         }
 
         await using var stream = file.OpenReadStream(MaxFileSize);
-        using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream);
-        var base64 = Convert.ToBase64String(memoryStream.ToArray());
-        userDto.Photo = $"data:{file.ContentType};base64,{base64}";
+        var streamContent = new StreamContent(stream);
+        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+        using var formData = new MultipartFormDataContent();
+        formData.Add(streamContent, "file", file.Name);
+
+        var responseHttp = await Repository.PostAsync<string>("/api/accounts/UploadPhoto", formData);
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await SweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        userDto.Photo = responseHttp.Response;
     }
 
     private void RemovePhoto()
