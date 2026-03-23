@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Veterinary.API.Data;
+using Veterinary.Shared.DTOs;
 using Veterinary.Shared.Entities;
 
 namespace Veterinary.API.Helpers;
@@ -8,11 +9,13 @@ namespace Veterinary.API.Helpers;
 public class UserHelper(
     DataContext context,
     UserManager<User> userManager,
-    RoleManager<IdentityRole> roleManager) : IUserHelper
+    RoleManager<IdentityRole> roleManager,
+    SignInManager<User> signInManager) : IUserHelper
 {
     private readonly DataContext _context = context;
     private readonly UserManager<User> _userManager = userManager;
     private readonly RoleManager<IdentityRole> _roleManager = roleManager;
+    private readonly SignInManager<User> _signInManager = signInManager;
 
     public async Task<IdentityResult> AddUserAsync(User user, string password)
     {
@@ -35,11 +38,21 @@ public class UserHelper(
 
     public async Task<User?> GetUserAsync(string email)
     {
-        return await _context.Users.FirstOrDefaultAsync(x => x.Email == email);
+        return await _context.Users.FirstOrDefaultAsync(x => x.Email! == email);
     }
 
     public async Task<bool> IsUserInRoleAsync(User user, string roleName)
     {
         return await _userManager.IsInRoleAsync(user, roleName);
+    }
+
+    public async Task<SignInResult> LoginAsync(LoginDTO model)
+    {
+        return await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
+    }
+
+    public async Task LogoutAsync()
+    {
+        await _signInManager.SignOutAsync();
     }
 }

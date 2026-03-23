@@ -1,0 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace Veterinary.Shared.DTOs;
+
+public class LoginDTO
+{
+    [Required(ErrorMessage = "El campo {0} es obligatorio.")]
+    [EmailAddress(ErrorMessage = "Debes ingresar un correo valido.")]
+    public string Email { get; set; } = null!;
+
+    [Display(Name = "Contrasena")]
+    [Required(ErrorMessage = "El campo {0} es obligatorio.")]
+    [MinLength(6, ErrorMessage = "El campo {0} debe tener al menos {1} caracteres.")]
+    public string Password { get; set; } = null!;
+}
