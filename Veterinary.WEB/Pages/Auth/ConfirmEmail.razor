@@ -4,6 +4,10 @@
 
 <div class="auth-shell">
     <div class="auth-card">
+        <div class="status-badge @(success ? "status-success" : "status-error")">
+            @(success ? "Correo confirmado" : "Revision requerida")
+        </div>
+
         <div class="auth-header">
             <h3>Confirmacion de correo</h3>
             <p>@message</p>
@@ -24,11 +28,13 @@
     public string? Token { get; set; }
 
     private string message = "Validando tu enlace...";
+    private bool success = true;
 
     protected override async Task OnInitializedAsync()
     {
         if (string.IsNullOrWhiteSpace(UserId) || string.IsNullOrWhiteSpace(Token))
         {
+            success = false;
             message = "El enlace de confirmacion no es valido.";
             return;
         }
@@ -36,10 +42,12 @@
         var responseHttp = await Repository.GetAsync<string>($"/api/accounts/ConfirmEmail?userId={Uri.EscapeDataString(UserId)}&token={Uri.EscapeDataString(Token)}");
         if (responseHttp.Error)
         {
+            success = false;
             message = await responseHttp.GetErrorMessageAsync() ?? "No fue posible confirmar el correo.";
             return;
         }
 
+        success = true;
         message = responseHttp.Response!;
     }
 }

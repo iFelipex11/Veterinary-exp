@@ -1,8 +1,16 @@
 @page "/logout"
+@attribute [Authorize]
 @inject ILoginService LoginService
 @inject NavigationManager NavigationManager
 
-<p>Cerrando sesion...</p>
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h3>Cerrando sesion</h3>
+            <p>Estamos protegiendo tu cuenta y limpiando la sesion actual.</p>
+        </div>
+    </div>
+</div>
 
 @code {
     protected override async Task OnInitializedAsync()
