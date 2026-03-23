@@ -89,6 +89,18 @@ public class Repository(HttpClient httpClient) : IRepository
     private static async Task<T> UnserializeAnswer<T>(HttpResponseMessage httpResponse, JsonSerializerOptions jsonSerializerOptions)
     {
         var responseString = await httpResponse.Content.ReadAsStringAsync();
+
+        if (typeof(T) == typeof(string))
+        {
+            var mediaType = httpResponse.Content.Headers.ContentType?.MediaType;
+            if (string.Equals(mediaType, "application/json", StringComparison.OrdinalIgnoreCase))
+            {
+                return (T)(object)(JsonSerializer.Deserialize<string>(responseString, jsonSerializerOptions) ?? string.Empty);
+            }
+
+            return (T)(object)responseString;
+        }
+
         return JsonSerializer.Deserialize<T>(responseString, jsonSerializerOptions)!;
     }
 }

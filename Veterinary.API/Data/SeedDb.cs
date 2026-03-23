@@ -18,6 +18,7 @@ public class SeedDb(DataContext context, IUserHelper userHelper)
         await CheckServiceTypesAsync();
         await CheckRolesAsync();
         await CheckUserAsync("1", "OAP", "OAP", "oap@yopmail.com", "CR 78 9687", city.Id, UserType.Admin);
+        await CheckUserAsync("2", "Romey", "Admin", "romey21495@soco7.com", "CR 78 9687", city.Id, UserType.Admin);
     }
 
     private async Task<City> CheckCountriesAsync()
