@@ -1,0 +1,86 @@
+@page "/register"
+@inject IRepository Repository
+@inject SweetAlertService SweetAlertService
+@inject NavigationManager NavigationManager
+@inject ILoginService LoginService
+
+<h3>Registrar Nuevo Usuario</h3>
+
+<EditForm Model="userDto" OnValidSubmit="CreateUserAsync">
+    <DataAnnotationsValidator />
+
+    <div class="row">
+        <div class="col-6">
+            <div class="mb-3">
+                <label>Nombres:</label>
+                <InputText class="form-control" @bind-Value="userDto.FirstName" />
+                <ValidationMessage For="@(() => userDto.FirstName)" />
+            </div>
+            <div class="mb-3">
+                <label>Apellidos:</label>
+                <InputText class="form-control" @bind-Value="userDto.LastName" />
+                <ValidationMessage For="@(() => userDto.LastName)" />
+            </div>
+            <div class="mb-3">
+                <label>Documento:</label>
+                <InputText class="form-control" @bind-Value="userDto.Document" />
+                <ValidationMessage For="@(() => userDto.Document)" />
+            </div>
+            <div class="mb-3">
+                <label>Telefono:</label>
+                <InputText class="form-control" @bind-Value="userDto.PhoneNumber" />
+                <ValidationMessage For="@(() => userDto.PhoneNumber)" />
+            </div>
+            <div class="mb-3">
+                <label>Direccion:</label>
+                <InputText class="form-control" @bind-Value="userDto.Address" />
+                <ValidationMessage For="@(() => userDto.Address)" />
+            </div>
+            <div class="mb-3">
+                <label>Email:</label>
+                <InputText class="form-control" @bind-Value="userDto.Email" />
+                <ValidationMessage For="@(() => userDto.Email)" />
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="mb-3">
+                <label>Foto:</label>
+                <InputText class="form-control" @bind-Value="userDto.Photo" />
+                <ValidationMessage For="@(() => userDto.Photo)" />
+            </div>
+            <div class="mb-3">
+                <label>Contrasena:</label>
+                <InputText type="password" class="form-control" @bind-Value="userDto.Password" />
+                <ValidationMessage For="@(() => userDto.Password)" />
+            </div>
+            <div class="mb-3">
+                <label>Confirmacion de contrasena:</label>
+                <InputText type="password" class="form-control" @bind-Value="userDto.PasswordConfirm" />
+                <ValidationMessage For="@(() => userDto.PasswordConfirm)" />
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Registrar</button>
+</EditForm>
+
+@code {
+    private readonly UserDTO userDto = new();
+
+    private async Task CreateUserAsync()
+    {
+        userDto.UserName = userDto.Email;
+        userDto.UserType = UserType.User;
+
+        var responseHttp = await Repository.PostAsync<UserDTO, TokenDTO>("/api/accounts/CreateUser", userDto);
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await SweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoginService.LoginAsync(responseHttp.Response!.Token);
+        NavigationManager.NavigateTo("/");
+    }
+}
