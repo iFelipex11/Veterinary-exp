@@ -41,4 +41,8 @@ public class Owner
 
     [Display(Name = "Full Name")]
     public string FullName => $"{FirstName} {LastName}";
+
+    public ICollection<Pet> Pets { get; set; } = new List<Pet>();
+
+    public ICollection<Agenda> Agendas { get; set; } = new List<Agenda>();
 }

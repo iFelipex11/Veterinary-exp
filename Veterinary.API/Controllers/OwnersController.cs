@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Veterinary.API.Data;
+using Veterinary.Shared.Entities;
 
 namespace Veterinary.API.Controllers;
 
@@ -27,5 +28,20 @@ public class OwnersController(DataContext context) : ControllerBase
         }
 
         return Ok(owner);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> Post(Owner owner)
+    {
+        var exists = await _context.Owners.AnyAsync(x => x.Document == owner.Document);
+
+        if (exists)
+        {
+            return BadRequest("An owner with the same document already exists.");
+        }
+
+        _context.Add(owner);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(Get), new { id = owner.Id }, owner);
     }
 }
