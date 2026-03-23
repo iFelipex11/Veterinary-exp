@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,12 +16,18 @@ namespace Veterinary.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AccountsController(IUserHelper userHelper, IMailHelper mailHelper, IFileStorage fileStorage, IConfiguration configuration) : ControllerBase
+public class AccountsController(
+    IUserHelper userHelper,
+    IMailHelper mailHelper,
+    IFileStorage fileStorage,
+    IConfiguration configuration,
+    IWebHostEnvironment environment) : ControllerBase
 {
     private readonly IUserHelper _userHelper = userHelper;
     private readonly IMailHelper _mailHelper = mailHelper;
     private readonly IFileStorage _fileStorage = fileStorage;
     private readonly IConfiguration _configuration = configuration;
+    private readonly IWebHostEnvironment _environment = environment;
 
     [AllowAnonymous]
     [HttpPost("CreateUser")]
@@ -47,6 +54,13 @@ public class AccountsController(IUserHelper userHelper, IMailHelper mailHelper, 
         }
 
         await _userHelper.AddUserToRoleAsync(user, user.UserType.ToString());
+
+        if (_environment.IsDevelopment())
+        {
+            await ConfirmUserInDevelopmentAsync(user);
+            return Ok("Tu usuario fue creado correctamente. En entorno local quedo confirmado automaticamente.");
+        }
+
         var emailSent = await SendConfirmationEmailAsync(user);
 
         if (emailSent)
@@ -65,6 +79,11 @@ public class AccountsController(IUserHelper userHelper, IMailHelper mailHelper, 
         if (user is null)
         {
             return BadRequest("Email o contrasena incorrectos.");
+        }
+
+        if (_environment.IsDevelopment() && !await _userHelper.IsEmailConfirmedAsync(user))
+        {
+            await ConfirmUserInDevelopmentAsync(user);
         }
 
         if (!await _userHelper.IsEmailConfirmedAsync(user))
@@ -374,5 +393,16 @@ public class AccountsController(IUserHelper userHelper, IMailHelper mailHelper, 
     private static string DecodeToken(string token)
     {
         return Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+    }
+
+    private async Task ConfirmUserInDevelopmentAsync(User user)
+    {
+        if (await _userHelper.IsEmailConfirmedAsync(user))
+        {
+            return;
+        }
+
+        var token = await _userHelper.GenerateEmailConfirmationTokenAsync(user);
+        await _userHelper.ConfirmEmailAsync(user, token);
     }
 }
