@@ -1,0 +1,44 @@
+@typeparam TItem
+
+@if (MyList is null)
+{
+    @if (Loading is null)
+    {
+        <div class="py-4 text-center">
+            <p>Cargando...</p>
+        </div>
+    }
+    else
+    {
+        @Loading
+    }
+}
+else if (MyList.Count == 0)
+{
+    @if (NoRecords is null)
+    {
+        <p>No hay registros para mostrar...</p>
+    }
+    else
+    {
+        @NoRecords
+    }
+}
+else
+{
+    @Body
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? Loading { get; set; }
+
+    [Parameter]
+    public RenderFragment? NoRecords { get; set; }
+
+    [Parameter, EditorRequired]
+    public RenderFragment Body { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public List<TItem>? MyList { get; set; }
+}
