@@ -17,7 +17,7 @@ else
             <div class="auth-card auth-card-wide">
                 <div class="auth-header">
                     <h3>Editar perfil</h3>
-                    <p>Actualiza tus datos personales y mantén tu cuenta al día.</p>
+                    <p>Actualiza tus datos personales y manten tu cuenta al dia.</p>
                 </div>
 
                 <div class="profile-photo-panel">
@@ -107,8 +107,25 @@ else
                             <ValidationMessage For="@(() => user.CityId)" />
                         </div>
                         <div class="mb-4">
-                            <label class="form-label">Foto (URL o base64)</label>
-                            <InputText class="form-control" @bind-Value="user.Photo" />
+                            <label class="form-label">Foto</label>
+                            <div class="photo-upload-card">
+                                @if (!string.IsNullOrWhiteSpace(user.Photo))
+                                {
+                                    <img class="photo-upload-preview" src="@user.Photo" alt="Vista previa" />
+                                }
+                                else
+                                {
+                                    <div class="photo-upload-placeholder">@GetInitials()</div>
+                                }
+
+                                <InputFile class="form-control" OnChange="LoadPhotoAsync" accept="image/*" />
+                                <small class="text-muted">Selecciona una imagen JPG, PNG o WEBP. Se guardara en base64.</small>
+
+                                @if (!string.IsNullOrWhiteSpace(user.Photo))
+                                {
+                                    <button class="btn btn-outline-danger btn-sm" type="button" @onclick="RemovePhoto">Quitar foto</button>
+                                }
+                            </div>
                             <ValidationMessage For="@(() => user.Photo)" />
                         </div>
 
@@ -130,6 +147,7 @@ else
     private List<City>? cities;
     private int selectedCountryId;
     private int selectedStateId;
+    private const long MaxFileSize = 2 * 1024 * 1024;
 
     protected override async Task OnInitializedAsync()
     {
@@ -254,5 +272,45 @@ else
         var first = string.IsNullOrWhiteSpace(user.FirstName) ? "V" : user.FirstName.Trim()[0].ToString().ToUpperInvariant();
         var last = string.IsNullOrWhiteSpace(user.LastName) ? "U" : user.LastName.Trim()[0].ToString().ToUpperInvariant();
         return $"{first}{last}";
+    }
+
+    private async Task LoadPhotoAsync(InputFileChangeEventArgs e)
+    {
+        if (user is null)
+        {
+            return;
+        }
+
+        var file = e.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            await SweetAlertService.FireAsync("Error", "Debes seleccionar un archivo de imagen valido.", SweetAlertIcon.Error);
+            return;
+        }
+
+        if (file.Size > MaxFileSize)
+        {
+            await SweetAlertService.FireAsync("Error", "La imagen no puede superar 2 MB.", SweetAlertIcon.Error);
+            return;
+        }
+
+        await using var stream = file.OpenReadStream(MaxFileSize);
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        var base64 = Convert.ToBase64String(memoryStream.ToArray());
+        user.Photo = $"data:{file.ContentType};base64,{base64}";
+    }
+
+    private void RemovePhoto()
+    {
+        if (user is not null)
+        {
+            user.Photo = null;
+        }
     }
 }

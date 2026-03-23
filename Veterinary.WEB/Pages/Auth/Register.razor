@@ -88,9 +88,26 @@
                 </div>
 
                 <div class="col-md-6">
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label class="form-label">Foto</label>
-                        <InputText class="form-control" @bind-Value="userDto.Photo" />
+                        <div class="photo-upload-card">
+                            @if (!string.IsNullOrWhiteSpace(userDto.Photo))
+                            {
+                                <img class="photo-upload-preview" src="@userDto.Photo" alt="Vista previa" />
+                            }
+                            else
+                            {
+                                <div class="photo-upload-placeholder">Sin foto</div>
+                            }
+
+                            <InputFile class="form-control" OnChange="LoadPhotoAsync" accept="image/*" />
+                            <small class="text-muted">Selecciona una imagen JPG, PNG o WEBP. Se guardara en base64.</small>
+
+                            @if (!string.IsNullOrWhiteSpace(userDto.Photo))
+                            {
+                                <button class="btn btn-outline-danger btn-sm" type="button" @onclick="RemovePhoto">Quitar foto</button>
+                            }
+                        </div>
                         <ValidationMessage For="@(() => userDto.Photo)" />
                     </div>
                     <div class="mb-3">
@@ -120,6 +137,7 @@
     private List<State>? states;
     private List<City>? cities;
     private bool loading;
+    private const long MaxFileSize = 2 * 1024 * 1024;
 
     protected override async Task OnInitializedAsync()
     {
@@ -211,5 +229,37 @@
 
         await SweetAlertService.FireAsync("Exito", responseHttp.Response!, SweetAlertIcon.Success);
         NavigationManager.NavigateTo("/login");
+    }
+
+    private async Task LoadPhotoAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            await SweetAlertService.FireAsync("Error", "Debes seleccionar un archivo de imagen valido.", SweetAlertIcon.Error);
+            return;
+        }
+
+        if (file.Size > MaxFileSize)
+        {
+            await SweetAlertService.FireAsync("Error", "La imagen no puede superar 2 MB.", SweetAlertIcon.Error);
+            return;
+        }
+
+        await using var stream = file.OpenReadStream(MaxFileSize);
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        var base64 = Convert.ToBase64String(memoryStream.ToArray());
+        userDto.Photo = $"data:{file.ContentType};base64,{base64}";
+    }
+
+    private void RemovePhoto()
+    {
+        userDto.Photo = null;
     }
 }
