@@ -404,6 +404,10 @@ FodyWeavers.xsd
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
+# Local CLI and NuGet state used by the sandboxed environment
+.dotnet/
+.nuget/
+
 # Local History for Visual Studio Code
 .history/
 
