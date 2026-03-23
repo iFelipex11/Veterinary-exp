@@ -7,13 +7,20 @@ public class LocalFileStorage(IWebHostEnvironment environment, IHttpContextAcces
 
     public async Task<string> SaveFileAsync(byte[] content, string extension, string containerName)
     {
-        var folder = Path.Combine(_environment.WebRootPath, containerName);
+        var webRootPath = _environment.WebRootPath;
+        if (string.IsNullOrWhiteSpace(webRootPath))
+        {
+            webRootPath = Path.Combine(_environment.ContentRootPath, "wwwroot");
+        }
+
+        var folder = Path.Combine(webRootPath, containerName);
         if (!Directory.Exists(folder))
         {
             Directory.CreateDirectory(folder);
         }
 
-        var fileName = $"{Guid.NewGuid()}{extension}";
+        var safeExtension = string.IsNullOrWhiteSpace(extension) ? ".bin" : extension;
+        var fileName = $"{Guid.NewGuid()}{safeExtension}";
         var fullPath = Path.Combine(folder, fileName);
         await File.WriteAllBytesAsync(fullPath, content);
 
