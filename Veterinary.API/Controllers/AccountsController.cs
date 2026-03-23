@@ -29,6 +29,7 @@ public class AccountsController(IUserHelper userHelper, IConfiguration configura
             Email = model.Email,
             UserName = model.Email,
             Address = model.Address,
+            CityId = model.CityId,
             PhoneNumber = model.PhoneNumber,
             Photo = model.Photo,
             UserType = model.UserType
@@ -74,6 +75,8 @@ public class AccountsController(IUserHelper userHelper, IConfiguration configura
             new("LastName", user.LastName),
             new("Address", user.Address),
             new("Photo", user.Photo ?? string.Empty)
+            ,
+            new("CityId", user.CityId.ToString())
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["jwtKey"]!));

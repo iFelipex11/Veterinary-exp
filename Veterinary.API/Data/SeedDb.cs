@@ -13,10 +13,43 @@ public class SeedDb(DataContext context, IUserHelper userHelper)
     public async Task SeedDbAsync()
     {
         await _context.Database.MigrateAsync();
+        var city = await CheckCountriesAsync();
         await CheckPetTypesAsync();
         await CheckServiceTypesAsync();
         await CheckRolesAsync();
-        await CheckUserAsync("1", "OAP", "OAP", "oap@yopmail.com", "CR 78 9687", UserType.Admin);
+        await CheckUserAsync("1", "OAP", "OAP", "oap@yopmail.com", "CR 78 9687", city.Id, UserType.Admin);
+    }
+
+    private async Task<City> CheckCountriesAsync()
+    {
+        var country = await _context.Countries
+            .Include(x => x.States)
+            .ThenInclude(x => x.Cities)
+            .FirstOrDefaultAsync(x => x.Name == "Colombia");
+
+        if (country is null)
+        {
+            country = new Country
+            {
+                Name = "Colombia",
+                States =
+                [
+                    new State
+                    {
+                        Name = "Cundinamarca",
+                        Cities =
+                        [
+                            new City { Name = "Bogota" }
+                        ]
+                    }
+                ]
+            };
+
+            _context.Countries.Add(country);
+            await _context.SaveChangesAsync();
+        }
+
+        return country.States.First().Cities.First();
     }
 
     private async Task CheckPetTypesAsync()
@@ -57,6 +90,7 @@ public class SeedDb(DataContext context, IUserHelper userHelper)
         string lastName,
         string email,
         string address,
+        int cityId,
         UserType userType)
     {
         var user = await _userHelper.GetUserAsync(email);
@@ -72,6 +106,7 @@ public class SeedDb(DataContext context, IUserHelper userHelper)
             LastName = lastName,
             Email = email,
             Address = address,
+            CityId = cityId,
             UserName = email,
             UserType = userType
         };

@@ -29,6 +29,12 @@ public class User : IdentityUser
     [Display(Name = "Foto")]
     public string? Photo { get; set; }
 
+    [Display(Name = "Ciudad")]
+    [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una ciudad.")]
+    public int CityId { get; set; }
+
+    public City? City { get; set; }
+
     [Display(Name = "Tipo de usuario")]
     public UserType UserType { get; set; }
 
