@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Veterinary.Shared.DTOs;
 using Veterinary.Shared.Entities;
 
@@ -22,4 +23,5 @@ public interface IUserHelper
     Task<IdentityResult> ConfirmEmailAsync(User user, string token);
     Task<string> GeneratePasswordResetTokenAsync(User user);
     Task<IdentityResult> ResetPasswordAsync(User user, string token, string newPassword);
+    IQueryable<User> GetUsersQueryable();
 }

@@ -1,0 +1,155 @@
+@page "/users"
+@attribute [Authorize(Roles = "Admin")]
+@inject IRepository Repository
+@inject SweetAlertService SweetAlertService
+
+@if (users is null)
+{
+    <div class="spinner"></div>
+}
+else
+{
+    <GenericList MyList="users">
+        <Body>
+            <div class="card">
+                <div class="card-header">
+                    <span>
+                        <i class="oi oi-people"></i> Usuarios
+                        <a class="btn btn-sm btn-primary float-end" href="/register?IsAdmin=true">
+                            <i class="oi oi-plus"></i> Adicionar administrador
+                        </a>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+                        <input style="width: 400px;" type="text" class="form-control" placeholder="Buscar usuario..." @bind="Filter" />
+                        <button type="button" class="btn btn-outline-primary" @onclick="ApplyFilterAsync">Filtrar</button>
+                        <button type="button" class="btn btn-outline-danger" @onclick="CleanFilterAsync">Limpiar</button>
+                    </div>
+
+                    <Pagination CurrentPage="currentPage" TotalPages="totalPages" SelectedPage="SelectedPageAsync" />
+
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Imagen</th>
+                                <th>Usuario</th>
+                                <th>Documento</th>
+                                <th>Email</th>
+                                <th>Direccion</th>
+                                <th>Confirmado</th>
+                                <th>Tipo usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in users)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(user.Photo))
+                                        {
+                                            <img src="@user.Photo" width="64" height="64" style="border-radius:50%; object-fit:cover;" alt="Foto" />
+                                        }
+                                        else
+                                        {
+                                            <div class="topbar-avatar-placeholder">@(GetInitials(user))</div>
+                                        }
+                                    </td>
+                                    <td>@user.FullName</td>
+                                    <td>@user.Document</td>
+                                    <td>@user.Email</td>
+                                    <td>@user.Address, @user.City?.Name</td>
+                                    <td>@(user.EmailConfirmed ? "Si" : "No")</td>
+                                    <td>@user.UserType</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </Body>
+    </GenericList>
+}
+
+@code {
+    private List<User>? users;
+    private int currentPage = 1;
+    private int totalPages;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Page { get; set; } = string.Empty;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Filter { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task SelectedPageAsync(int page)
+    {
+        currentPage = page;
+        await LoadAsync(page);
+    }
+
+    private async Task LoadAsync(int page = 1)
+    {
+        if (!string.IsNullOrWhiteSpace(Page))
+        {
+            page = Convert.ToInt32(Page);
+        }
+
+        var urlUsers = string.IsNullOrWhiteSpace(Filter)
+            ? $"/api/accounts/all?page={page}"
+            : $"/api/accounts/all?page={page}&filter={Uri.EscapeDataString(Filter)}";
+
+        var urlTotalPages = string.IsNullOrWhiteSpace(Filter)
+            ? "/api/accounts/totalPages"
+            : $"/api/accounts/totalPages?filter={Uri.EscapeDataString(Filter)}";
+
+        var responseUsers = await Repository.GetAsync<List<User>>(urlUsers);
+        if (responseUsers.Error)
+        {
+            var message = await responseUsers.GetErrorMessageAsync();
+            await SweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            users = [];
+            return;
+        }
+
+        var responsePages = await Repository.GetAsync<int>(urlTotalPages);
+        if (responsePages.Error)
+        {
+            var message = await responsePages.GetErrorMessageAsync();
+            await SweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            users = [];
+            return;
+        }
+
+        users = responseUsers.Response;
+        totalPages = responsePages.Response;
+        currentPage = page;
+    }
+
+    private async Task ApplyFilterAsync()
+    {
+        currentPage = 1;
+        await LoadAsync(1);
+    }
+
+    private async Task CleanFilterAsync()
+    {
+        Filter = string.Empty;
+        currentPage = 1;
+        await LoadAsync(1);
+    }
+
+    private static string GetInitials(User user)
+    {
+        var first = string.IsNullOrWhiteSpace(user.FirstName) ? "V" : user.FirstName.Trim()[0].ToString().ToUpperInvariant();
+        var last = string.IsNullOrWhiteSpace(user.LastName) ? "U" : user.LastName.Trim()[0].ToString().ToUpperInvariant();
+        return $"{first}{last}";
+    }
+}

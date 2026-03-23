@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
@@ -218,6 +219,53 @@ public class AccountsController(IUserHelper userHelper, IMailHelper mailHelper, 
         }
 
         return Ok(user);
+    }
+
+    [HttpGet("all")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+    public async Task<ActionResult> GetAll([FromQuery] int page = 1, [FromQuery] string? filter = null)
+    {
+        const int pageSize = 10;
+
+        var queryable = _userHelper.GetUsersQueryable();
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            queryable = queryable.Where(x =>
+                x.FirstName.Contains(filter) ||
+                x.LastName.Contains(filter) ||
+                x.Document.Contains(filter) ||
+                x.Email!.Contains(filter));
+        }
+
+        var users = await queryable
+            .OrderBy(x => x.FirstName)
+            .ThenBy(x => x.LastName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(users);
+    }
+
+    [HttpGet("totalPages")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+    public async Task<ActionResult> GetTotalPages([FromQuery] string? filter = null)
+    {
+        const double pageSize = 10;
+
+        var queryable = _userHelper.GetUsersQueryable();
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            queryable = queryable.Where(x =>
+                x.FirstName.Contains(filter) ||
+                x.LastName.Contains(filter) ||
+                x.Document.Contains(filter) ||
+                x.Email!.Contains(filter));
+        }
+
+        var count = await queryable.CountAsync();
+        var totalPages = (int)Math.Ceiling(count / pageSize);
+        return Ok(totalPages == 0 ? 1 : totalPages);
     }
 
     [HttpPut]

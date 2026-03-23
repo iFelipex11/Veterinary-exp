@@ -139,6 +139,10 @@
     private bool loading;
     private const long MaxFileSize = 2 * 1024 * 1024;
 
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public bool IsAdmin { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadCountriesAsync();
@@ -215,7 +219,7 @@
     {
         loading = true;
         userDto.UserName = userDto.Email;
-        userDto.UserType = UserType.User;
+        userDto.UserType = IsAdmin ? UserType.Admin : UserType.User;
 
         var responseHttp = await Repository.PostAsync<UserDTO, string>("/api/accounts/CreateUser", userDto);
         loading = false;
@@ -227,8 +231,8 @@
             return;
         }
 
-        await SweetAlertService.FireAsync("Exito", responseHttp.Response!, SweetAlertIcon.Success);
-        NavigationManager.NavigateTo("/login");
+        await SweetAlertService.FireAsync("Confirmacion", responseHttp.Response!, SweetAlertIcon.Info);
+        NavigationManager.NavigateTo(IsAdmin ? "/users" : "/login");
     }
 
     private async Task LoadPhotoAsync(InputFileChangeEventArgs e)

@@ -108,4 +108,13 @@ public class UserHelper(
     {
         return await _userManager.ResetPasswordAsync(user, token, newPassword);
     }
+
+    public IQueryable<User> GetUsersQueryable()
+    {
+        return _context.Users
+            .Include(x => x.City)
+            .ThenInclude(x => x!.State)
+            .ThenInclude(x => x.Country)
+            .AsQueryable();
+    }
 }

@@ -1,0 +1,35 @@
+@if (TotalPages > 1)
+{
+    <nav aria-label="Paginacion" class="mb-3">
+        <ul class="pagination">
+            @for (var pageNumber = 1; pageNumber <= TotalPages; pageNumber++)
+            {
+                var current = pageNumber == CurrentPage;
+                <li class="page-item @(current ? "active" : null)">
+                    <button class="page-link" type="button" @onclick="() => ChangePageAsync(pageNumber)">@pageNumber</button>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@code {
+    [Parameter]
+    public int CurrentPage { get; set; }
+
+    [Parameter]
+    public int TotalPages { get; set; }
+
+    [Parameter]
+    public EventCallback<int> SelectedPage { get; set; }
+
+    private async Task ChangePageAsync(int page)
+    {
+        if (page == CurrentPage)
+        {
+            return;
+        }
+
+        await SelectedPage.InvokeAsync(page);
+    }
+}
