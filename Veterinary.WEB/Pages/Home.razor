@@ -2,15 +2,36 @@
 
 <PageTitle>Home</PageTitle>
 
-<AuthorizeView Roles="Admin">
-    <Authorized>
-        <p>Estas autenticado y autorizado, @context.User.Identity?.Name</p>
-    </Authorized>
-    <NotAuthorized>
-        <p>No estas autorizado</p>
-    </NotAuthorized>
-</AuthorizeView>
+<div class="hero-panel">
+    <div class="hero-copy">
+        <span class="status-badge status-success">Sistema activo</span>
+        <h1>Veterinary</h1>
+        <p>Gestiona propietarios, autenticacion y mantenimiento de usuarios desde una sola aplicacion.</p>
 
-<h1>Hello, world!</h1>
+        <AuthorizeView>
+            <Authorized>
+                <p class="hero-note">Sesion iniciada como @context.User.Identity?.Name</p>
+            </Authorized>
+            <NotAuthorized>
+                <p class="hero-note">Inicia sesion o registra una cuenta para comenzar.</p>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
 
-Welcome to your new app.
+    <div class="hero-actions">
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <a class="btn btn-primary" href="/owners">Ir a propietarios</a>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView>
+            <Authorized>
+                <a class="btn btn-outline-secondary" href="/edituser">Mi perfil</a>
+            </Authorized>
+            <NotAuthorized>
+                <a class="btn btn-primary" href="/login">Iniciar sesion</a>
+                <a class="btn btn-outline-secondary" href="/register">Crear cuenta</a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+</div>

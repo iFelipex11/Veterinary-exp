@@ -282,3 +282,35 @@ code {
     background: #fee2e2;
     color: #991b1b;
 }
+
+.hero-panel {
+    display: grid;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    background: linear-gradient(135deg, #f8fbff, #eef6ff);
+    box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.06);
+}
+
+.hero-copy h1 {
+    margin: 0.5rem 0;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+}
+
+.hero-copy p {
+    max-width: 42rem;
+    color: #475569;
+    font-size: 1.05rem;
+}
+
+.hero-note {
+    margin-top: 1rem;
+    font-weight: 600;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}

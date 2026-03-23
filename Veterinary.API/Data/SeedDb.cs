@@ -96,6 +96,7 @@ public class SeedDb(DataContext context, IUserHelper userHelper)
         var user = await _userHelper.GetUserAsync(email);
         if (user is not null)
         {
+            await EnsureUserSetupAsync(user, userType);
             return user;
         }
 
@@ -114,9 +115,23 @@ public class SeedDb(DataContext context, IUserHelper userHelper)
         var result = await _userHelper.AddUserAsync(user, "123456");
         if (result.Succeeded)
         {
-            await _userHelper.AddUserToRoleAsync(user, userType.ToString());
+            await EnsureUserSetupAsync(user, userType);
         }
 
         return user;
+    }
+
+    private async Task EnsureUserSetupAsync(User user, UserType userType)
+    {
+        if (!await _userHelper.IsUserInRoleAsync(user, userType.ToString()))
+        {
+            await _userHelper.AddUserToRoleAsync(user, userType.ToString());
+        }
+
+        if (!await _userHelper.IsEmailConfirmedAsync(user))
+        {
+            var token = await _userHelper.GenerateEmailConfirmationTokenAsync(user);
+            await _userHelper.ConfirmEmailAsync(user, token);
+        }
     }
 }
