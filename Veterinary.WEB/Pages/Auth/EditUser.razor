@@ -2,6 +2,7 @@
 @inject IRepository Repository
 @inject SweetAlertService SweetAlertService
 @inject NavigationManager NavigationManager
+@inject ILoginService LoginService
 
 @if (user is null)
 {
@@ -12,48 +13,108 @@ else
     <EditForm Model="user" OnValidSubmit="SaveUserAsync">
         <DataAnnotationsValidator />
 
-        <div class="card">
-            <div class="card-header">
-                <span>
-                    <i class="oi oi-person"></i> Editar Usuario
-                    <a class="btn btn-sm btn-secondary float-end" href="/changepassword"><i class="oi oi-key"></i> Cambiar Contrasena</a>
-                    <button class="btn btn-sm btn-primary float-end mx-2" type="submit"><i class="oi oi-check"></i> Guardar Cambios</button>
-                </span>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-6">
+        <div class="auth-shell">
+            <div class="auth-card auth-card-wide">
+                <div class="auth-header">
+                    <h3>Editar perfil</h3>
+                    <p>Actualiza tus datos personales y mantén tu cuenta al día.</p>
+                </div>
+
+                <div class="profile-photo-panel">
+                    @if (!string.IsNullOrWhiteSpace(user.Photo))
+                    {
+                        <img class="profile-photo-preview" src="@user.Photo" alt="Foto de perfil" />
+                    }
+                    else
+                    {
+                        <div class="profile-photo-placeholder">@GetInitials()</div>
+                    }
+
+                    <div class="profile-photo-copy">
+                        <strong>@user.FullName</strong>
+                        <span>@user.Email</span>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
                         <div class="mb-3">
-                            <label>Nombres:</label>
+                            <label class="form-label">Nombres</label>
                             <InputText class="form-control" @bind-Value="user.FirstName" />
                             <ValidationMessage For="@(() => user.FirstName)" />
                         </div>
                         <div class="mb-3">
-                            <label>Apellidos:</label>
+                            <label class="form-label">Apellidos</label>
                             <InputText class="form-control" @bind-Value="user.LastName" />
                             <ValidationMessage For="@(() => user.LastName)" />
                         </div>
                         <div class="mb-3">
-                            <label>Documento:</label>
+                            <label class="form-label">Documento</label>
                             <InputText class="form-control" @bind-Value="user.Document" />
                             <ValidationMessage For="@(() => user.Document)" />
                         </div>
                         <div class="mb-3">
-                            <label>Direccion:</label>
+                            <label class="form-label">Direccion</label>
                             <InputText class="form-control" @bind-Value="user.Address" />
                             <ValidationMessage For="@(() => user.Address)" />
                         </div>
-                    </div>
-                    <div class="col-6">
                         <div class="mb-3">
-                            <label>Telefono:</label>
+                            <label class="form-label">Telefono</label>
                             <InputText class="form-control" @bind-Value="user.PhoneNumber" />
                             <ValidationMessage For="@(() => user.PhoneNumber)" />
                         </div>
+                    </div>
+
+                    <div class="col-md-6">
                         <div class="mb-3">
-                            <label>Foto (URL o base64):</label>
+                            <label class="form-label">Pais</label>
+                            <select class="form-select" value="@selectedCountryId" @onchange="CountryChangedAsync">
+                                <option value="0">-- Seleccione un pais --</option>
+                                @if (countries is not null)
+                                {
+                                    @foreach (var country in countries)
+                                    {
+                                        <option value="@country.Id">@country.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estado/Departamento</label>
+                            <select class="form-select" value="@selectedStateId" @onchange="StateChangedAsync">
+                                <option value="0">-- Seleccione un estado/departamento --</option>
+                                @if (states is not null)
+                                {
+                                    @foreach (var state in states)
+                                    {
+                                        <option value="@state.Id">@state.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ciudad</label>
+                            <select class="form-select" @bind="user.CityId">
+                                <option value="0">-- Seleccione una ciudad --</option>
+                                @if (cities is not null)
+                                {
+                                    @foreach (var city in cities)
+                                    {
+                                        <option value="@city.Id">@city.Name</option>
+                                    }
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => user.CityId)" />
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Foto (URL o base64)</label>
                             <InputText class="form-control" @bind-Value="user.Photo" />
                             <ValidationMessage For="@(() => user.Photo)" />
+                        </div>
+
+                        <div class="auth-actions">
+                            <button class="btn btn-primary" type="submit">Guardar cambios</button>
+                            <a class="btn btn-outline-secondary" href="/changepassword">Cambiar contrasena</a>
                         </div>
                     </div>
                 </div>
@@ -64,6 +125,11 @@ else
 
 @code {
     private User? user;
+    private List<Country>? countries;
+    private List<State>? states;
+    private List<City>? cities;
+    private int selectedCountryId;
+    private int selectedStateId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -82,11 +148,25 @@ else
         }
 
         user = responseHttp.Response;
+        await LoadCountriesAsync();
+
+        if (user?.City?.State is not null)
+        {
+            selectedCountryId = user.City.State.CountryId;
+            selectedStateId = user.City.StateId;
+            await LoadStatesAsync(selectedCountryId);
+            await LoadCitiesAsync(selectedStateId);
+        }
     }
 
     private async Task SaveUserAsync()
     {
-        var responseHttp = await Repository.PutAsync("/api/accounts", user);
+        if (user is null)
+        {
+            return;
+        }
+
+        var responseHttp = await Repository.PutAsync<User, TokenDTO>("/api/accounts", user);
         if (responseHttp.Error)
         {
             var messageError = await responseHttp.GetErrorMessageAsync();
@@ -94,7 +174,85 @@ else
             return;
         }
 
+        await LoginService.LoginAsync(responseHttp.Response!.Token);
         await SweetAlertService.FireAsync("Exito", "Usuario actualizado correctamente.", SweetAlertIcon.Success);
         NavigationManager.NavigateTo("/");
+    }
+
+    private async Task LoadCountriesAsync()
+    {
+        var responseHttp = await Repository.GetAsync<List<Country>>("/api/countries/combo");
+        if (!responseHttp.Error)
+        {
+            countries = responseHttp.Response;
+        }
+    }
+
+    private async Task LoadStatesAsync(int countryId)
+    {
+        if (countryId == 0)
+        {
+            states = null;
+            return;
+        }
+
+        var responseHttp = await Repository.GetAsync<List<State>>($"/api/states/combo/{countryId}");
+        if (!responseHttp.Error)
+        {
+            states = responseHttp.Response;
+        }
+    }
+
+    private async Task LoadCitiesAsync(int stateId)
+    {
+        if (stateId == 0)
+        {
+            cities = null;
+            return;
+        }
+
+        var responseHttp = await Repository.GetAsync<List<City>>($"/api/cities/combo/{stateId}");
+        if (!responseHttp.Error)
+        {
+            cities = responseHttp.Response;
+        }
+    }
+
+    private async Task CountryChangedAsync(ChangeEventArgs e)
+    {
+        selectedCountryId = Convert.ToInt32(e.Value);
+        selectedStateId = 0;
+
+        if (user is not null)
+        {
+            user.CityId = 0;
+        }
+
+        cities = null;
+        await LoadStatesAsync(selectedCountryId);
+    }
+
+    private async Task StateChangedAsync(ChangeEventArgs e)
+    {
+        selectedStateId = Convert.ToInt32(e.Value);
+
+        if (user is not null)
+        {
+            user.CityId = 0;
+        }
+
+        await LoadCitiesAsync(selectedStateId);
+    }
+
+    private string GetInitials()
+    {
+        if (user is null)
+        {
+            return "VU";
+        }
+
+        var first = string.IsNullOrWhiteSpace(user.FirstName) ? "V" : user.FirstName.Trim()[0].ToString().ToUpperInvariant();
+        var last = string.IsNullOrWhiteSpace(user.LastName) ? "U" : user.LastName.Trim()[0].ToString().ToUpperInvariant();
+        return $"{first}{last}";
     }
 }

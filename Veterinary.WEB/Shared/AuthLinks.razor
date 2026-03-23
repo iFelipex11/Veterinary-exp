@@ -1,6 +1,16 @@
 <AuthorizeView>
     <Authorized>
-        <a href="edituser" class="nav-link btn btn-link d-inline">@context.User.Identity!.Name</a>
+        <a href="edituser" class="nav-link btn btn-link d-inline auth-user-link">
+            @if (!string.IsNullOrWhiteSpace(GetPhoto(context.User)))
+            {
+                <img class="topbar-avatar" src="@GetPhoto(context.User)" alt="Avatar" />
+            }
+            else
+            {
+                <span class="topbar-avatar topbar-avatar-placeholder">@GetInitials(context.User)</span>
+            }
+            <span>@GetDisplayName(context.User)</span>
+        </a>
         <a href="logout" class="nav-link btn btn-link d-inline">Cerrar Sesion</a>
     </Authorized>
     <NotAuthorized>
@@ -8,3 +18,27 @@
         <a href="login" class="nav-link btn btn-link d-inline">Iniciar Sesion</a>
     </NotAuthorized>
 </AuthorizeView>
+
+@code {
+    private static string GetPhoto(System.Security.Claims.ClaimsPrincipal user)
+    {
+        return user.FindFirst("Photo")?.Value ?? string.Empty;
+    }
+
+    private static string GetDisplayName(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var firstName = user.FindFirst("FirstName")?.Value;
+        var lastName = user.FindFirst("LastName")?.Value;
+        var fullName = $"{firstName} {lastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? user.Identity?.Name ?? "Mi cuenta" : fullName;
+    }
+
+    private static string GetInitials(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var firstName = user.FindFirst("FirstName")?.Value;
+        var lastName = user.FindFirst("LastName")?.Value;
+        var first = string.IsNullOrWhiteSpace(firstName) ? "V" : firstName.Trim()[0].ToString().ToUpperInvariant();
+        var last = string.IsNullOrWhiteSpace(lastName) ? "U" : lastName.Trim()[0].ToString().ToUpperInvariant();
+        return $"{first}{last}";
+    }
+}

@@ -38,12 +38,20 @@ public class UserHelper(
 
     public async Task<User?> GetUserAsync(string email)
     {
-        return await _context.Users.FirstOrDefaultAsync(x => x.Email! == email);
+        return await _context.Users
+            .Include(x => x.City)
+            .ThenInclude(x => x!.State)
+            .ThenInclude(x => x.Country)
+            .FirstOrDefaultAsync(x => x.Email! == email);
     }
 
     public async Task<User?> GetUserAsync(Guid userId)
     {
-        return await _context.Users.FirstOrDefaultAsync(x => x.Id == userId.ToString());
+        return await _context.Users
+            .Include(x => x.City)
+            .ThenInclude(x => x!.State)
+            .ThenInclude(x => x.Country)
+            .FirstOrDefaultAsync(x => x.Id == userId.ToString());
     }
 
     public async Task<User?> GetUserByIdAsync(string userId)
