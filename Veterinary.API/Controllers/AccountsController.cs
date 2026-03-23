@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,6 +17,7 @@ public class AccountsController(IUserHelper userHelper, IConfiguration configura
     private readonly IUserHelper _userHelper = userHelper;
     private readonly IConfiguration _configuration = configuration;
 
+    [AllowAnonymous]
     [HttpPost("CreateUser")]
     public async Task<ActionResult> CreateUser([FromBody] UserDTO model)
     {
@@ -42,6 +44,7 @@ public class AccountsController(IUserHelper userHelper, IConfiguration configura
         return BadRequest(result.Errors.FirstOrDefault()?.Description);
     }
 
+    [AllowAnonymous]
     [HttpPost("Login")]
     public async Task<ActionResult> Login([FromBody] LoginDTO model)
     {
