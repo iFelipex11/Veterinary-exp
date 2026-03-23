@@ -1,4 +1,5 @@
 @page "/owners/create"
+@attribute [Authorize(Roles = "Admin")]
 @inject NavigationManager NavigationManager
 @inject IRepository Repository
 @inject SweetAlertService Swal
