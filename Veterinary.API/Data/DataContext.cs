@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Veterinary.Shared.Entities;
 
 namespace Veterinary.API.Data;
 
-public class DataContext(DbContextOptions<DataContext> options) : DbContext(options)
+public class DataContext(DbContextOptions<DataContext> options) : IdentityDbContext<User>(options)
 {
     public DbSet<Owner> Owners => Set<Owner>();
     public DbSet<PetType> PetTypes => Set<PetType>();
