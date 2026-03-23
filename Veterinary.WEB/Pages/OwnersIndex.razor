@@ -1,5 +1,6 @@
 @page "/owners"
 @inject IRepository Repository
+@inject SweetAlertService Swal
 
 <PageTitle>Owners</PageTitle>
 
@@ -41,8 +42,8 @@
                         <td>@owner.CellPhone</td>
                         <td>@owner.Address</td>
                         <td>
-                            <a class="btn btn-warning btn-sm me-2">Editar</a>
-                            <button class="btn btn-danger btn-sm">Borrar</button>
+                            <a class="btn btn-warning btn-sm me-2" href="@($"/owners/edit/{owner.Id}")">Editar</a>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteAsync(owner.Id)">Borrar</button>
                         </td>
                     </tr>
                 }
@@ -57,6 +58,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadOwnersAsync();
+    }
+
+    private async Task LoadOwnersAsync()
+    {
         var responseHttp = await Repository.GetAsync<List<Owner>>("/api/owners");
         if (responseHttp.Error)
         {
@@ -65,6 +71,36 @@
             return;
         }
 
+        ErrorMessage = null;
         OwnersList = responseHttp.Response;
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        var result = await Swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmacion",
+            Text = "Deseas borrar este owner?",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Si",
+            CancelButtonText = "No"
+        });
+
+        var confirmed = !string.IsNullOrEmpty(result.Value);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var responseHttp = await Repository.DeleteAsync($"/api/owners/{id}");
+        if (responseHttp.Error)
+        {
+            ErrorMessage = await responseHttp.GetErrorMessageAsync();
+            await Swal.FireAsync("Error", ErrorMessage, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoadOwnersAsync();
     }
 }

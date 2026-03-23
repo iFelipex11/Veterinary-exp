@@ -1,0 +1,67 @@
+@page "/owners/edit/{Id:int}"
+@inject NavigationManager NavigationManager
+@inject IRepository Repository
+@inject SweetAlertService Swal
+
+<PageTitle>Edit Owner</PageTitle>
+
+<h3>Editar Owner</h3>
+
+@if (owner is null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <OwnerForm @ref="ownerForm" Owner="owner" OnSubmit="EditAsync" ReturnAction="Return" />
+}
+
+@code {
+    private Owner? owner;
+    private OwnerForm? ownerForm;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await Repository.GetAsync<Owner>($"/api/owners/{Id}");
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                NavigationManager.NavigateTo("/owners");
+                return;
+            }
+
+            var errorMessage = await responseHttp.GetErrorMessageAsync();
+            await Swal.FireAsync("Error", errorMessage, SweetAlertIcon.Error);
+            return;
+        }
+
+        owner = responseHttp.Response;
+    }
+
+    private async Task EditAsync()
+    {
+        var responseHttp = await Repository.PutAsync("/api/owners", owner);
+        if (responseHttp.Error)
+        {
+            var errorMessage = await responseHttp.GetErrorMessageAsync();
+            await Swal.FireAsync("Error", errorMessage, SweetAlertIcon.Error);
+            return;
+        }
+
+        if (ownerForm is not null)
+        {
+            ownerForm.FormPostedSuccessfully = true;
+        }
+
+        NavigationManager.NavigateTo("/owners");
+    }
+
+    private void Return()
+    {
+        NavigationManager.NavigateTo("/owners");
+    }
+}

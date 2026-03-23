@@ -44,4 +44,39 @@ public class OwnersController(DataContext context) : ControllerBase
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(Get), new { id = owner.Id }, owner);
     }
+
+    [HttpPut]
+    public async Task<ActionResult> Put(Owner owner)
+    {
+        var currentOwner = await _context.Owners.FirstOrDefaultAsync(x => x.Id == owner.Id);
+        if (currentOwner is null)
+        {
+            return NotFound();
+        }
+
+        var exists = await _context.Owners.AnyAsync(x => x.Document == owner.Document && x.Id != owner.Id);
+        if (exists)
+        {
+            return BadRequest("An owner with the same document already exists.");
+        }
+
+        _context.Entry(currentOwner).CurrentValues.SetValues(owner);
+        await _context.SaveChangesAsync();
+        return Ok(currentOwner);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var affectedRows = await _context.Owners
+            .Where(x => x.Id == id)
+            .ExecuteDeleteAsync();
+
+        if (affectedRows == 0)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
+    }
 }
