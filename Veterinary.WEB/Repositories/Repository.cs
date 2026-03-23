@@ -46,18 +46,6 @@ public class Repository(HttpClient httpClient) : IRepository
         return new HttpResponseWrapper<TResponse>(default, true, responseHttp);
     }
 
-    public async Task<HttpResponseWrapper<TResponse>> PostAsync<TResponse>(string url, HttpContent content)
-    {
-        var responseHttp = await _httpClient.PostAsync(url, content);
-        if (responseHttp.IsSuccessStatusCode)
-        {
-            var response = await UnserializeAnswer<TResponse>(responseHttp, JsonDefaultOptions);
-            return new HttpResponseWrapper<TResponse>(response, false, responseHttp);
-        }
-
-        return new HttpResponseWrapper<TResponse>(default, true, responseHttp);
-    }
-
     public async Task<HttpResponseWrapper<object>> DeleteAsync(string url)
     {
         var responseHttp = await _httpClient.DeleteAsync(url);

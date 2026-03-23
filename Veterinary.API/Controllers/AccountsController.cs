@@ -19,13 +19,11 @@ namespace Veterinary.API.Controllers;
 public class AccountsController(
     IUserHelper userHelper,
     IMailHelper mailHelper,
-    IFileStorage fileStorage,
     IConfiguration configuration,
     IWebHostEnvironment environment) : ControllerBase
 {
     private readonly IUserHelper _userHelper = userHelper;
     private readonly IMailHelper _mailHelper = mailHelper;
-    private readonly IFileStorage _fileStorage = fileStorage;
     private readonly IConfiguration _configuration = configuration;
     private readonly IWebHostEnvironment _environment = environment;
 
@@ -191,40 +189,6 @@ public class AccountsController(
         }
 
         return Ok("Tu contrasena fue restablecida correctamente.");
-    }
-
-    [AllowAnonymous]
-    [HttpPost("UploadPhoto")]
-    public async Task<ActionResult> UploadPhoto(IFormFile file)
-    {
-        var maxSize = _configuration.GetValue<long?>("files:maxPhotoSize") ?? (2 * 1024 * 1024);
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-
-        if (file is null || file.Length == 0)
-        {
-            return BadRequest("Debes seleccionar una imagen.");
-        }
-
-        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-        {
-            return BadRequest("El archivo seleccionado no es una imagen valida.");
-        }
-
-        if (file.Length > maxSize)
-        {
-            return BadRequest("La imagen excede el tamano maximo permitido.");
-        }
-
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!allowedExtensions.Contains(extension))
-        {
-            return BadRequest("La extension del archivo no esta permitida.");
-        }
-
-        await using var memoryStream = new MemoryStream();
-        await file.CopyToAsync(memoryStream);
-        var url = await _fileStorage.SaveFileAsync(memoryStream.ToArray(), extension, "users");
-        return Ok(url);
     }
 
     [HttpGet]
